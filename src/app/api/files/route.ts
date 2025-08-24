@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const files = await db.fileUpload.findMany({
       where: whereClause,
       include: {
-        files: {
+        subjectFiles: {
           include: {
             subject: {
               select: {
@@ -36,7 +36,8 @@ export async function GET(request: NextRequest) {
         },
         user: {
           select: {
-            name: true
+            name: true,
+            email: true
           }
         }
       },
@@ -47,20 +48,26 @@ export async function GET(request: NextRequest) {
 
     const formattedFiles = files.map(file => ({
       id: file.id,
-      title: file.files[0]?.title || file.originalName,
-      description: file.files[0]?.description,
+      filename: file.filename,
       originalName: file.originalName,
       fileSize: file.fileSize,
       mimeType: file.mimeType,
       cloudinaryUrl: file.cloudinaryUrl,
-      uploadedAt: file.uploadedAt,
       uploadedBy: file.uploadedBy,
-      subject: file.files[0]?.subject
+      uploadedAt: file.uploadedAt,
+      uploader: {
+        name: file.user.name,
+        email: file.user.email
+      },
+      subjectFiles: file.subjectFiles.map(sf => ({
+        subject: {
+          name: sf.subject.name,
+          code: sf.subject.code
+        }
+      }))
     }));
 
-    return NextResponse.json({
-      files: formattedFiles
-    });
+    return NextResponse.json(formattedFiles);
   } catch (error) {
     console.error('Error fetching files:', error);
     return NextResponse.json(

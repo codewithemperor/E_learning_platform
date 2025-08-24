@@ -1,13 +1,36 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Users, BookOpen, FileText, Video } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
+interface TeacherStats {
+  totalClasses: number;
+  totalStudents: number;
+  totalFiles: number;
+  totalVideoCalls: number;
+}
+
+interface TeacherClass {
+  id: string;
+  name: string;
+  studentCount: number;
+  schedule: string;
+  subject: string;
+}
+
 export default function TeacherDashboard() {
   const { user, loading } = useAuth();
+  const [stats, setStats] = useState<TeacherStats>({
+    totalClasses: 0,
+    totalStudents: 0,
+    totalFiles: 0,
+    totalVideoCalls: 0
+  });
+  const [recentClasses, setRecentClasses] = useState<TeacherClass[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -15,7 +38,40 @@ export default function TeacherDashboard() {
     }
   }, [user, loading]);
 
-  if (loading) {
+  useEffect(() => {
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    try {
+      // Get teacher ID from auth user
+      const teacherId = user?.id;
+      if (!teacherId) return;
+
+      const [statsResponse, classesResponse] = await Promise.all([
+        fetch(`/api/teacher/dashboard/stats?teacherId=${teacherId}`),
+        fetch(`/api/teacher/dashboard/classes?teacherId=${teacherId}`)
+      ]);
+
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        setStats(statsData);
+      }
+
+      if (classesResponse.ok) {
+        const classesData = await classesResponse.json();
+        setRecentClasses(classesData);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  if (loading || loadingData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -30,42 +86,35 @@ export default function TeacherDashboard() {
     return null; // Will redirect in useEffect
   }
 
-  const stats = [
+  const statsCards = [
     {
       title: "My Classes",
-      value: "6",
+      value: stats.totalClasses.toString(),
       description: "Active classes",
       icon: BookOpen,
       color: "text-blue-600",
     },
     {
       title: "Total Students",
-      value: "156",
+      value: stats.totalStudents.toString(),
       description: "Enrolled students",
       icon: Users,
       color: "text-green-600",
     },
     {
       title: "Uploaded Files",
-      value: "89",
+      value: stats.totalFiles.toString(),
       description: "Learning materials",
       icon: FileText,
       color: "text-purple-600",
     },
     {
       title: "Video Calls",
-      value: "12",
+      value: stats.totalVideoCalls.toString(),
       description: "This month",
       icon: Video,
       color: "text-orange-600",
     },
-  ];
-
-  const recentClasses = [
-    { id: 1, name: "Computer Science 101", students: 45, time: "Mon 9:00 AM" },
-    { id: 2, name: "Data Structures", students: 38, time: "Tue 2:00 PM" },
-    { id: 3, name: "Web Development", students: 42, time: "Wed 10:00 AM" },
-    { id: 4, name: "Database Systems", students: 35, time: "Thu 3:00 PM" },
   ];
 
   return (
@@ -80,7 +129,7 @@ export default function TeacherDashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat) => (
+          {statsCards.map((stat) => (
             <Card key={stat.title}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">

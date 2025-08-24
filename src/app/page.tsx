@@ -70,12 +70,21 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                className="w-full bg-green-600 hover:bg-green-700"
-                onClick={() => window.location.href = '/student/login'}
-              >
-                Student Login
-              </Button>
+              <div className="space-y-2">
+                <Button 
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  onClick={() => window.location.href = '/student/login'}
+                >
+                  Student Login
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => window.location.href = '/student/register'}
+                >
+                  Register
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -48,15 +48,22 @@ const menuItems = {
     { title: "Dashboard", icon: Home, url: "/student/dashboard" },
     { title: "My Classes", icon: BookOpen, url: "/student/classes" },
     { title: "Subject Files", icon: FileText, url: "/student/files" },
+    { title: "Video Call", icon: User, url: "/student/video-call" },
     { title: "Course Form", icon: FileText, url: "/student/course-form" },
     { title: "Settings", icon: Settings, url: "/student/settings" },
   ]
 };
 
 const roleColors = {
-  admin: "bg-purple-600 hover:bg-purple-700",
-  teacher: "bg-indigo-600 hover:bg-indigo-700",
-  student: "bg-green-600 hover:bg-green-700"
+  admin: "bg-[var(--admin-primary)] hover:bg-[var(--admin-secondary)] text-white",
+  teacher: "bg-[var(--teacher-primary)] hover:bg-[var(--teacher-secondary)] text-white", 
+  student: "bg-[var(--student-primary)] hover:bg-[var(--student-secondary)] text-white"
+};
+
+const roleHeadingColors = {
+  admin: "heading-admin",
+  teacher: "heading-teacher",
+  student: "heading-student"
 };
 
 const roleIcons = {
@@ -79,11 +86,15 @@ export function DashboardLayout({ children, userRole, userName }: DashboardLayou
     <SidebarProvider>
       <div className="flex h-screen">
         {/* Desktop Sidebar */}
-        <Sidebar className="hidden lg:block">
-          <SidebarContent>
-            <div className="flex items-center gap-2 p-4 border-b">
-              <RoleIcon className="h-6 w-6" />
-              <span className="font-semibold capitalize">{userRole} Portal</span>
+        <Sidebar className="hidden lg:block border-r">
+          <SidebarContent className="bg-[var(--sidebar)]">
+            <div className="flex items-center gap-2 p-4 border-b border-sidebar-border">
+              <div className={`p-2 rounded-lg ${roleColors[userRole]}`}>
+                <RoleIcon className="h-5 w-5 text-white" />
+              </div>
+              <span className={`font-semibold capitalize text-sidebar-foreground ${roleHeadingColors[userRole]}`}>
+                {userRole} Portal
+              </span>
             </div>
             <SidebarGroup>
               <SidebarGroupLabel>Navigation</SidebarGroupLabel>
@@ -106,7 +117,7 @@ export function DashboardLayout({ children, userRole, userName }: DashboardLayou
         </Sidebar>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0 w-full">
           {/* Header */}
           <header className="border-b bg-white dark:bg-gray-800">
             <div className="flex items-center justify-between p-4">
@@ -117,17 +128,21 @@ export function DashboardLayout({ children, userRole, userName }: DashboardLayou
                       <Menu className="h-4 w-4" />
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="w-64">
-                    <div className="flex items-center gap-2 p-4 border-b">
-                      <RoleIcon className="h-6 w-6" />
-                      <span className="font-semibold capitalize">{userRole} Portal</span>
+                  <SheetContent side="left" className="w-64 bg-[var(--sidebar)]">
+                    <div className="flex items-center gap-2 p-4 border-b border-sidebar-border">
+                      <div className={`p-2 rounded-lg ${roleColors[userRole]}`}>
+                        <RoleIcon className="h-5 w-5 text-white" />
+                      </div>
+                      <span className={`font-semibold capitalize text-sidebar-foreground ${roleHeadingColors[userRole]}`}>
+                        {userRole} Portal
+                      </span>
                     </div>
                     <nav className="mt-4">
                       {items.map((item) => (
                         <a
                           key={item.title}
                           href={item.url}
-                          className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                          className="flex items-center gap-2 p-2 hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)] rounded text-sidebar-foreground"
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
                           <item.icon className="h-4 w-4" />
@@ -137,16 +152,22 @@ export function DashboardLayout({ children, userRole, userName }: DashboardLayou
                     </nav>
                   </SheetContent>
                 </Sheet>
-                <h1 className="text-xl font-semibold capitalize">{userRole} Dashboard</h1>
+                <h1 className={`text-xl font-semibold capitalize ${roleHeadingColors[userRole]}`}>
+                  {userRole} Dashboard
+                </h1>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-600 dark:text-gray-300">
+                <div className={`px-3 py-1 rounded-full text-sm font-medium ${roleColors[userRole]}`}>
+                  {userRole}
+                </div>
+                <span className="text-sm text-muted-foreground">
                   Welcome, {userName}
                 </span>
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={handleLogout}
+                  className="border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--accent)]"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   Logout
@@ -156,7 +177,7 @@ export function DashboardLayout({ children, userRole, userName }: DashboardLayou
           </header>
 
           {/* Page Content */}
-          <main className="flex-1 overflow-auto p-6">
+          <main className="flex-1 overflow-auto p-6 min-h-0">
             {children}
           </main>
         </div>

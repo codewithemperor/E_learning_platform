@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GraduationCap, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import Swal from "sweetalert2";
 
 export default function StudentLogin() {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,20 +15,33 @@ export default function StudentLogin() {
     email: "",
     password: ""
   });
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
     try {
       await login(formData.email, formData.password, "STUDENT");
+      Swal.fire({
+        icon: 'success',
+        title: 'Login Successful!',
+        text: 'Welcome back to the student portal',
+        confirmButtonColor: '#16a34a',
+        timer: 2000,
+        timerProgressBar: true
+      }).then(() => {
+        window.location.href = '/student/dashboard';
+      });
     } catch (error: any) {
-      setError(error.message || "Login failed");
+      Swal.fire({
+        icon: 'error',
+        title: 'Login Failed',
+        text: error.message || "Invalid email or password",
+        confirmButtonColor: '#dc2626'
+      });
     } finally {
       setLoading(false);
     }
@@ -51,12 +65,6 @@ export default function StudentLogin() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
-                  {error}
-                </div>
-              )}
-              
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -105,7 +113,17 @@ export default function StudentLogin() {
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center space-y-2">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Don't have an account?{" "}
+                <Button 
+                  variant="link" 
+                  className="text-green-600 hover:text-green-700 p-0 h-auto"
+                  onClick={() => window.location.href = '/student/register'}
+                >
+                  Register here
+                </Button>
+              </p>
               <Button 
                 variant="link" 
                 className="text-green-600 hover:text-green-700"

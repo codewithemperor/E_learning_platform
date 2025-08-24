@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import Swal from "sweetalert2";
 
 export default function TeacherLogin() {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,20 +15,33 @@ export default function TeacherLogin() {
     email: "",
     password: ""
   });
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
     try {
       await login(formData.email, formData.password, "TEACHER");
+      Swal.fire({
+        icon: 'success',
+        title: 'Login Successful!',
+        text: 'Welcome back to the teacher portal',
+        confirmButtonColor: '#4f46e5',
+        timer: 2000,
+        timerProgressBar: true
+      }).then(() => {
+        window.location.href = '/teacher/dashboard';
+      });
     } catch (error: any) {
-      setError(error.message || "Login failed");
+      Swal.fire({
+        icon: 'error',
+        title: 'Login Failed',
+        text: error.message || "Invalid email or password",
+        confirmButtonColor: '#dc2626'
+      });
     } finally {
       setLoading(false);
     }
@@ -51,12 +65,6 @@ export default function TeacherLogin() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
-                  {error}
-                </div>
-              )}
-              
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input

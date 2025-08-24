@@ -1,13 +1,43 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { BookOpen, FileText, Download, Calendar } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
+interface StudentStats {
+  enrolledCourses: number;
+  availableFiles: number;
+  downloads: number;
+  weeklyClasses: number;
+}
+
+interface StudentCourse {
+  id: string;
+  name: string;
+  instructor: string;
+  progress: number;
+}
+
+interface RecentFile {
+  id: string;
+  title: string;
+  course: string;
+  uploadedAt: string;
+}
+
 export default function StudentDashboard() {
   const { user, loading } = useAuth();
+  const [stats, setStats] = useState<StudentStats>({
+    enrolledCourses: 0,
+    availableFiles: 0,
+    downloads: 0,
+    weeklyClasses: 0
+  });
+  const [myCourses, setMyCourses] = useState<StudentCourse[]>([]);
+  const [recentFiles, setRecentFiles] = useState<RecentFile[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -15,7 +45,42 @@ export default function StudentDashboard() {
     }
   }, [user, loading]);
 
-  if (loading) {
+  useEffect(() => {
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    try {
+      const [statsResponse, coursesResponse, filesResponse] = await Promise.all([
+        fetch('/api/student/dashboard/stats'),
+        fetch('/api/student/dashboard/courses'),
+        fetch('/api/student/dashboard/files')
+      ]);
+
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        setStats(statsData);
+      }
+
+      if (coursesResponse.ok) {
+        const coursesData = await coursesResponse.json();
+        setMyCourses(coursesData);
+      }
+
+      if (filesResponse.ok) {
+        const filesData = await filesResponse.json();
+        setRecentFiles(filesData);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  if (loading || loadingData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -30,49 +95,35 @@ export default function StudentDashboard() {
     return null; // Will redirect in useEffect
   }
 
-  const stats = [
+  const statsCards = [
     {
       title: "Enrolled Courses",
-      value: "5",
+      value: stats.enrolledCourses.toString(),
       description: "Active courses",
       icon: BookOpen,
       color: "text-green-600",
     },
     {
       title: "Available Files",
-      value: "45",
+      value: stats.availableFiles.toString(),
       description: "Learning materials",
       icon: FileText,
       color: "text-blue-600",
     },
     {
       title: "Downloads",
-      value: "23",
+      value: stats.downloads.toString(),
       description: "Files downloaded",
       icon: Download,
       color: "text-purple-600",
     },
     {
       title: "This Week",
-      value: "8",
+      value: stats.weeklyClasses.toString(),
       description: "Classes scheduled",
       icon: Calendar,
       color: "text-orange-600",
     },
-  ];
-
-  const myCourses = [
-    { id: 1, name: "Computer Science 101", instructor: "Dr. Smith", progress: 75 },
-    { id: 2, name: "Data Structures", instructor: "Prof. Johnson", progress: 60 },
-    { id: 3, name: "Web Development", instructor: "Dr. Brown", progress: 90 },
-    { id: 4, name: "Database Systems", instructor: "Prof. Davis", progress: 45 },
-  ];
-
-  const recentFiles = [
-    { id: 1, title: "Lecture 1: Introduction", course: "Computer Science 101", uploaded: "2 days ago" },
-    { id: 2, title: "Assignment 2: Algorithms", course: "Data Structures", uploaded: "3 days ago" },
-    { id: 3, title: "Lab Manual: HTML/CSS", course: "Web Development", uploaded: "1 week ago" },
-    { id: 4, title: "Chapter 3: SQL Basics", course: "Database Systems", uploaded: "1 week ago" },
   ];
 
   return (
@@ -87,7 +138,7 @@ export default function StudentDashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat) => (
+          {statsCards.map((stat) => (
             <Card key={stat.title}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -149,7 +200,7 @@ export default function StudentDashboard() {
                       <div className="text-sm text-gray-500">{file.course}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xs text-gray-500">{file.uploaded}</div>
+                      <div className="text-xs text-gray-500">{new Date(file.uploadedAt).toLocaleDateString()}</div>
                       <button className="text-blue-600 hover:text-blue-700 text-sm">
                         <Download className="h-4 w-4" />
                       </button>
@@ -184,7 +235,10 @@ export default function StudentDashboard() {
                 <div className="font-medium">Downloads</div>
                 <div className="text-sm text-gray-500">Downloaded files</div>
               </button>
-              <button className="p-4 text-left border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+              <button 
+                className="p-4 text-left border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+                onClick={() => window.location.href = '/student/course-form'}
+              >
                 <Calendar className="h-6 w-6 text-orange-600 mb-2" />
                 <div className="font-medium">Course Form</div>
                 <div className="text-sm text-gray-500">Register courses</div>

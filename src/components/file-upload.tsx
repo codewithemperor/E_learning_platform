@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Upload, X, FileText } from "lucide-react";
 import { ValidatedForm } from "@/components/validated-form";
 import { fileUploadSchema, type FileUploadFormData } from "@/lib/validations";
+import { useAlert } from "@/hooks/use-alert";
 
 interface FileUploadProps {
   subjectId?: string;
@@ -28,6 +29,7 @@ export function FileUpload({ subjectId, uploadedBy, onUploadComplete }: FileUplo
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const { showSuccess, showError } = useAlert();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -75,10 +77,11 @@ export function FileUpload({ subjectId, uploadedBy, onUploadComplete }: FileUplo
         onUploadComplete();
       }
 
-      // Show success message (you can replace this with a toast notification)
-      alert("File uploaded successfully!");
+      // Show success message using SweetAlert
+      showSuccess("Upload Successful", "File uploaded successfully!");
     } catch (error: any) {
       setError(error.message || "Failed to upload file");
+      showError("Upload Failed", error.message || "Failed to upload file");
     } finally {
       setUploading(false);
     }

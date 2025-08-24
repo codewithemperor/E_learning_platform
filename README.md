@@ -36,6 +36,7 @@ The system features role-based authentication, responsive design, Cloudinary int
 - **Course Management**: Complete course, subject, and enrollment tracking
 - **Form Validation**: Comprehensive validation using Zod schemas
 - **Dashboard Analytics**: Role-specific statistics and activity tracking
+- **SweetAlert Integration**: Beautiful, customizable alerts and notifications for better user experience
 
 ### Portal-Specific Features
 
@@ -553,15 +554,31 @@ src/
 ├── app/
 │   ├── admin/          # Admin portal pages
 │   │   ├── login/
-│   │   └── dashboard/
+│   │   ├── dashboard/
+│   │   ├── departments/
+│   │   ├── courses/
+│   │   ├── subjects/
+│   │   ├── teachers/
+│   │   ├── students/
+│   │   ├── files/
+│   │   └── settings/
 │   ├── teacher/        # Teacher portal pages
 │   │   ├── login/
 │   │   ├── dashboard/
-│   │   └── video-call/
+│   │   ├── classes/
+│   │   ├── subjects/
+│   │   ├── students/
+│   │   ├── files/
+│   │   ├── video-call/
+│   │   └── settings/
 │   ├── student/        # Student portal pages
 │   │   ├── login/
 │   │   ├── dashboard/
-│   │   └── video-call/
+│   │   ├── classes/
+│   │   ├── files/
+│   │   ├── course-form/
+│   │   ├── video-call/
+│   │   └── settings/
 │   ├── api/           # API endpoints
 │   │   ├── auth/      # Authentication endpoints
 │   │   │   ├── login/
@@ -583,6 +600,7 @@ src/
 │   └── validated-form.tsx   # Form with validation component
 ├── hooks/
 │   ├── use-auth.ts    # Authentication hook
+│   ├── use-alert.ts   # SweetAlert notification hook
 │   ├── use-mobile.ts  # Mobile detection hook
 │   └── use-toast.ts   # Toast notification hook
 └── lib/

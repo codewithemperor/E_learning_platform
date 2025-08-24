@@ -1,13 +1,34 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Users, BookOpen, FileText, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
+interface DashboardStats {
+  totalStudents: number;
+  totalTeachers: number;
+  totalCourses: number;
+  totalFiles: number;
+}
+
+interface RecentActivity {
+  id: string;
+  action: string;
+  time: string;
+}
+
 export default function AdminDashboard() {
   const { user, loading } = useAuth();
+  const [stats, setStats] = useState<DashboardStats>({
+    totalStudents: 0,
+    totalTeachers: 0,
+    totalCourses: 0,
+    totalFiles: 0
+  });
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+  const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -15,7 +36,36 @@ export default function AdminDashboard() {
     }
   }, [user, loading]);
 
-  if (loading) {
+  useEffect(() => {
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    try {
+      const [statsResponse, activitiesResponse] = await Promise.all([
+        fetch('/api/admin/dashboard/stats'),
+        fetch('/api/admin/dashboard/activities')
+      ]);
+
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        setStats(statsData);
+      }
+
+      if (activitiesResponse.ok) {
+        const activitiesData = await activitiesResponse.json();
+        setRecentActivities(activitiesData);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
+  if (loading || loadingStats) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -30,42 +80,35 @@ export default function AdminDashboard() {
     return null; // Will redirect in useEffect
   }
 
-  const stats = [
+  const statsCards = [
     {
       title: "Total Students",
-      value: "1,234",
+      value: stats.totalStudents.toString(),
       description: "Active students",
       icon: Users,
       color: "text-green-600",
     },
     {
       title: "Total Teachers",
-      value: "89",
+      value: stats.totalTeachers.toString(),
       description: "Active teachers",
       icon: Users,
       color: "text-blue-600",
     },
     {
       title: "Total Courses",
-      value: "45",
+      value: stats.totalCourses.toString(),
       description: "Available courses",
       icon: BookOpen,
       color: "text-purple-600",
     },
     {
       title: "Total Files",
-      value: "567",
+      value: stats.totalFiles.toString(),
       description: "Uploaded files",
       icon: FileText,
       color: "text-orange-600",
     },
-  ];
-
-  const recentActivities = [
-    { id: 1, action: "New student registered", time: "2 minutes ago" },
-    { id: 2, action: "Teacher uploaded new material", time: "15 minutes ago" },
-    { id: 3, action: "New course created", time: "1 hour ago" },
-    { id: 4, action: "Department updated", time: "2 hours ago" },
   ];
 
   return (
@@ -80,7 +123,7 @@ export default function AdminDashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat) => (
+          {statsCards.map((stat) => (
             <Card key={stat.title}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">

@@ -9,22 +9,36 @@ import { Shield, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ValidatedForm } from "@/components/validated-form";
 import { loginSchema, type LoginFormData } from "@/lib/validations";
+import Swal from "sweetalert2";
 
 export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   
   const { login } = useAuth();
 
   const handleSubmit = async (data: LoginFormData) => {
-    setError("");
     setLoading(true);
 
     try {
       await login(data.email, data.password, "ADMIN");
+      Swal.fire({
+        icon: 'success',
+        title: 'Login Successful!',
+        text: 'Welcome back to the admin portal',
+        confirmButtonColor: '#7c3aed',
+        timer: 2000,
+        timerProgressBar: true
+      }).then(() => {
+        window.location.href = '/admin/dashboard';
+      });
     } catch (error: any) {
-      setError(error.message || "Login failed");
+      Swal.fire({
+        icon: 'error',
+        title: 'Login Failed',
+        text: error.message || "Invalid email or password",
+        confirmButtonColor: '#dc2626'
+      });
     } finally {
       setLoading(false);
     }
@@ -47,12 +61,6 @@ export default function AdminLogin() {
             <CardDescription>Enter your credentials to continue</CardDescription>
           </CardHeader>
           <CardContent>
-            {error && (
-              <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md mb-4">
-                {error}
-              </div>
-            )}
-            
             <ValidatedForm
               schema={loginSchema}
               onSubmit={handleSubmit}

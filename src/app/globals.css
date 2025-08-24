@@ -51,7 +51,7 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: oklch(0.646 0.222 41.116);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -70,20 +70,23 @@
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary: oklch(0.646 0.222 41.116);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
   
-  /* E-Learning Theme Colors */
-  --admin-primary: oklch(0.646 0.222 41.116);
-  --admin-secondary: oklch(0.769 0.188 70.08);
-  --teacher-primary: oklch(0.6 0.118 184.704);
-  --teacher-secondary: oklch(0.828 0.189 84.429);
-  --student-primary: oklch(0.398 0.07 227.392);
-  --student-secondary: oklch(0.646 0.222 41.116);
+  /* E-Learning Theme Colors - More Vibrant */
+  --admin-primary: oklch(0.65 0.25 300);
+  --admin-secondary: oklch(0.75 0.2 280);
+  --admin-accent: oklch(0.85 0.15 290);
+  --teacher-primary: oklch(0.6 0.18 220);
+  --teacher-secondary: oklch(0.7 0.16 200);
+  --teacher-accent: oklch(0.8 0.14 210);
+  --student-primary: oklch(0.55 0.2 120);
+  --student-secondary: oklch(0.65 0.18 140);
+  --student-accent: oklch(0.75 0.16 130);
 }
 
 .dark {
@@ -120,12 +123,15 @@
   --sidebar-ring: oklch(0.556 0 0);
   
   /* E-Learning Theme Colors - Dark Mode */
-  --admin-primary: oklch(0.646 0.222 41.116);
-  --admin-secondary: oklch(0.769 0.188 70.08);
-  --teacher-primary: oklch(0.6 0.118 184.704);
-  --teacher-secondary: oklch(0.828 0.189 84.429);
-  --student-primary: oklch(0.398 0.07 227.392);
-  --student-secondary: oklch(0.646 0.222 41.116);
+  --admin-primary: oklch(0.7 0.25 300);
+  --admin-secondary: oklch(0.8 0.2 280);
+  --admin-accent: oklch(0.85 0.15 290);
+  --teacher-primary: oklch(0.65 0.18 220);
+  --teacher-secondary: oklch(0.75 0.16 200);
+  --teacher-accent: oklch(0.8 0.14 210);
+  --student-primary: oklch(0.6 0.2 120);
+  --student-secondary: oklch(0.7 0.18 140);
+  --student-accent: oklch(0.75 0.16 130);
 }
 
 @layer base {
@@ -135,6 +141,45 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  }
+  
+  /* Enhanced button styles */
+  .btn-admin {
+    @apply bg-[var(--admin-primary)] hover:bg-[var(--admin-secondary)] text-white font-medium;
+  }
+  
+  .btn-teacher {
+    @apply bg-[var(--teacher-primary)] hover:bg-[var(--teacher-secondary)] text-white font-medium;
+  }
+  
+  .btn-student {
+    @apply bg-[var(--student-primary)] hover:bg-[var(--student-secondary)] text-white font-medium;
+  }
+  
+  /* Enhanced heading styles */
+  .heading-admin {
+    @apply text-[var(--admin-primary)] font-bold;
+  }
+  
+  .heading-teacher {
+    @apply text-[var(--teacher-primary)] font-bold;
+  }
+  
+  .heading-student {
+    @apply text-[var(--student-primary)] font-bold;
+  }
+  
+  /* Enhanced card styles */
+  .card-admin {
+    @apply border-[var(--admin-primary)] bg-[var(--admin-accent)];
+  }
+  
+  .card-teacher {
+    @apply border-[var(--teacher-primary)] bg-[var(--teacher-accent)];
+  }
+  
+  .card-student {
+    @apply border-[var(--student-primary)] bg-[var(--student-accent)];
   }
 }
 
