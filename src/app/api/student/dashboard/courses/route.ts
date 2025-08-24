@@ -20,18 +20,9 @@ export async function GET(request: NextRequest) {
         studentId: studentId,
       },
       include: {
-        teacherSubject: {
+        subject: {
           include: {
-            subject: {
-              include: {
-                course: true,
-              },
-            },
-            teacher: {
-              include: {
-                user: true,
-              },
-            },
+            course: true,
           },
         },
       },
@@ -42,9 +33,9 @@ export async function GET(request: NextRequest) {
 
     // Format the response with mock progress data
     const formattedCourses = courses.map((enrollment) => ({
-      id: enrollment.teacherSubject.subject.id,
-      name: enrollment.teacherSubject.subject.name,
-      instructor: enrollment.teacherSubject.teacher.user.name,
+      id: enrollment.subject.id,
+      name: enrollment.subject.name,
+      instructor: "No instructor assigned",
       progress: Math.floor(Math.random() * 100), // Mock progress data
     }));
 

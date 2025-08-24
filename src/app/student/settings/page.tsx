@@ -47,7 +47,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (profile) {
@@ -63,7 +63,12 @@ export default function SettingsPage() {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch("/api/student/profile");
+      if (!user?.studentProfile?.id) {
+        console.error("No student ID available");
+        return;
+      }
+      
+      const response = await fetch(`/api/student/profile?studentId=${user.studentProfile.id}`);
       if (response.ok) {
         const data = await response.json();
         setProfile(data);
@@ -80,7 +85,13 @@ export default function SettingsPage() {
     setSaving(true);
 
     try {
-      const response = await fetch("/api/student/profile", {
+      if (!user?.studentProfile?.id) {
+        showError("Error", "Student ID not available");
+        setSaving(false);
+        return;
+      }
+
+      const response = await fetch(`/api/student/profile?studentId=${user.studentProfile.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -124,7 +135,13 @@ export default function SettingsPage() {
     }
 
     try {
-      const response = await fetch("/api/student/password", {
+      if (!user?.studentProfile?.id) {
+        showError("Error", "Student ID not available");
+        setSaving(false);
+        return;
+      }
+
+      const response = await fetch(`/api/student/password?studentId=${user.studentProfile.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

@@ -13,9 +13,38 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // First, verify if studentId is a User ID or Student profile ID
+    let actualUserId = studentId;
+    
+    // Check if this is a student profile ID
+    const studentProfile = await db.student.findUnique({
+      where: { id: studentId },
+      select: { userId: true }
+    });
+    
+    if (studentProfile) {
+      actualUserId = studentProfile.userId;
+    } else {
+      // Check if it's already a valid user ID with student profile
+      const userWithStudent = await db.user.findUnique({
+        where: { 
+          id: studentId,
+          role: "STUDENT"
+        },
+        include: { studentProfile: true }
+      });
+      
+      if (!userWithStudent || !userWithStudent.studentProfile) {
+        return NextResponse.json(
+          { error: "Student not found" },
+          { status: 404 }
+        );
+      }
+    }
+
     const enrollments = await db.enrollment.findMany({
       where: {
-        studentId: studentId,
+        studentId: actualUserId,
       },
       include: {
         subject: {
@@ -66,31 +95,97 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Delete existing enrollments for this student
-    await db.enrollment.deleteMany({
+    // First, resolve the actual user ID
+    let actualUserId = studentId;
+    
+    // Check if this is a student profile ID
+    const studentProfile = await db.student.findUnique({
+      where: { id: studentId },
+      select: { userId: true }
+    });
+    
+    if (studentProfile) {
+      actualUserId = studentProfile.userId;
+    } else {
+      // Verify it's a valid user ID with student role
+      const userWithStudent = await db.user.findUnique({
+        where: { 
+          id: studentId,
+          role: "STUDENT"
+        },
+        include: { studentProfile: true }
+      });
+      
+      if (!userWithStudent || !userWithStudent.studentProfile) {
+        return NextResponse.json(
+          { error: "Student not found" },
+          { status: 404 }
+        );
+      }
+    }
+
+    // Validate that all subject IDs exist
+    const existingSubjects = await db.subject.findMany({
       where: {
-        studentId: studentId,
+        id: {
+          in: subjectIds
+        }
       },
+      select: { id: true }
     });
 
-    // Create new enrollments
-    const newEnrollments = await Promise.all(
-      subjectIds.map((subjectId) =>
-        db.enrollment.create({
-          data: {
-            studentId: studentId,
-            subjectId: subjectId,
-          },
-        })
-      )
-    );
+    const existingSubjectIds = existingSubjects.map(s => s.id);
+    const invalidSubjectIds = subjectIds.filter(id => !existingSubjectIds.includes(id));
+
+    if (invalidSubjectIds.length > 0) {
+      return NextResponse.json(
+        { 
+          error: "Invalid subject IDs found", 
+          invalidIds: invalidSubjectIds 
+        },
+        { status: 400 }
+      );
+    }
+
+    // Use a transaction to ensure data consistency
+    const result = await db.$transaction(async (tx) => {
+      // Delete existing enrollments for this student
+      await tx.enrollment.deleteMany({
+        where: {
+          studentId: actualUserId,
+        },
+      });
+
+      // Create new enrollments
+      const newEnrollments = await Promise.all(
+        subjectIds.map((subjectId) =>
+          tx.enrollment.create({
+            data: {
+              studentId: actualUserId,
+              subjectId: subjectId,
+            },
+          })
+        )
+      );
+
+      return newEnrollments;
+    });
 
     return NextResponse.json({
       message: "Enrollments updated successfully",
-      count: newEnrollments.length,
+      count: result.length,
     });
   } catch (error) {
     console.error("Error updating student enrollments:", error);
+    
+    // Provide more specific error messages
+    if (error.code === 'P2003') {
+      return NextResponse.json(
+        { error: "Invalid student ID or subject ID provided" },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
       { error: "Failed to update student enrollments" },
       { status: 500 }

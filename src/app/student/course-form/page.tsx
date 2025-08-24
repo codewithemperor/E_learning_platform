@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BookOpen, Building, GraduationCap, CheckCircle, AlertCircle, Edit } from "lucide-react";
+import { BookOpen, Building, GraduationCap, CheckCircle, AlertCircle, Edit, Loader2, User } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useAlert } from "@/hooks/use-alert";
 import { DashboardLayout } from "@/components/dashboard-layout";
@@ -61,33 +61,43 @@ export default function CourseFormPage() {
   const [availableSubjects, setAvailableSubjects] = useState<Subject[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userLoading, setUserLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [editMode, setEditMode] = useState(false);
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { showSuccess, showError } = useAlert();
 
+  // Wait for user to load
   useEffect(() => {
-    fetchDepartments();
-    fetchStudentProfile();
-  }, []);
+    if (!authLoading) {
+      setUserLoading(false);
+      if (user) {
+        fetchDepartments();
+        fetchStudentProfile();
+      } else {
+        setLoading(false);
+        showError("Please log in to access course registration");
+      }
+    }
+  }, [user, authLoading]);
 
   useEffect(() => {
-    if (selectedDepartment) {
+    if (selectedDepartment && user && !userLoading) {
       fetchCourses(selectedDepartment);
     }
-  }, [selectedDepartment]);
+  }, [selectedDepartment, user, userLoading]);
 
   useEffect(() => {
-    if (studentProfile) {
+    if (studentProfile && user && !userLoading) {
       setSelectedDepartment(studentProfile.department.id);
       setSelectedCourse(studentProfile.course.id);
       fetchEnrollments();
       fetchAllSubjectsForCourse(studentProfile.course.id);
     }
-  }, [studentProfile]);
+  }, [studentProfile, user, userLoading]);
 
   useEffect(() => {
     if (enrollments.length > 0 && availableSubjects.length > 0) {
@@ -102,9 +112,14 @@ export default function CourseFormPage() {
       if (response.ok) {
         const data = await response.json();
         setDepartments(data);
+      } else {
+        const errorData = await response.json();
+        showError(errorData.error || "Failed to fetch departments");
+        console.error("API Error:", errorData);
       }
     } catch (error) {
       console.error("Error fetching departments:", error);
+      showError("An error occurred while fetching departments");
     }
   };
 
@@ -114,21 +129,38 @@ export default function CourseFormPage() {
       if (response.ok) {
         const data = await response.json();
         setCourses(data);
+      } else {
+        const errorData = await response.json();
+        showError(errorData.error || "Failed to fetch courses");
+        console.error("API Error:", errorData);
       }
     } catch (error) {
       console.error("Error fetching courses:", error);
+      showError("An error occurred while fetching courses");
     }
   };
 
   const fetchStudentProfile = async () => {
     try {
-      const response = await fetch("/api/student/profile");
+      if (!user?.studentProfile?.id) {
+        showError("User information not available");
+        setLoading(false);
+        return;
+      }
+      
+      const response = await fetch(`/api/student/profile?studentId=${user.studentProfile.id}`);
       if (response.ok) {
         const data = await response.json();
         setStudentProfile(data);
+        showSuccess(`Profile loaded successfully for ${data.studentId}`);
+      } else {
+        const errorData = await response.json();
+        showError(errorData.error || "Failed to fetch student profile");
+        console.error("API Error:", errorData);
       }
     } catch (error) {
       console.error("Error fetching student profile:", error);
+      showError("An error occurred while fetching student profile");
     } finally {
       setLoading(false);
     }
@@ -140,9 +172,14 @@ export default function CourseFormPage() {
       if (response.ok) {
         const data = await response.json();
         setAvailableSubjects(data);
+      } else {
+        const errorData = await response.json();
+        showError(errorData.error || "Failed to fetch available subjects");
+        console.error("API Error:", errorData);
       }
     } catch (error) {
       console.error("Error fetching available subjects:", error);
+      showError("An error occurred while fetching available subjects");
     }
   };
 
@@ -152,23 +189,41 @@ export default function CourseFormPage() {
       if (response.ok) {
         const data = await response.json();
         setAvailableSubjects(data);
+        if (data.length === 0) {
+          showError("No subjects found for this course");
+        } else {
+          showSuccess(`Loaded ${data.length} subject${data.length !== 1 ? 's' : ''} for your course`);
+        }
+      } else {
+        const errorData = await response.json();
+        showError(errorData.error || "Failed to fetch course subjects");
+        console.error("API Error:", errorData);
       }
     } catch (error) {
       console.error("Error fetching all subjects for course:", error);
+      showError("An error occurred while fetching course subjects");
     }
   };
 
   const fetchEnrollments = async () => {
-    if (!user?.id) return;
+    if (!user?.studentProfile?.id) return;
     
     try {
-      const response = await fetch(`/api/student/enrollments?studentId=${user.id}`);
+      const response = await fetch(`/api/student/enrollments?studentId=${user.studentProfile.id}`);
       if (response.ok) {
         const data = await response.json();
         setEnrollments(data);
+        if (data.length > 0) {
+          showSuccess(`Found ${data.length} existing enrollment${data.length !== 1 ? 's' : ''}`);
+        }
+      } else {
+        const errorData = await response.json();
+        showError(errorData.error || "Failed to fetch enrollments");
+        console.error("API Error:", errorData);
       }
     } catch (error) {
       console.error("Error fetching enrollments:", error);
+      showError("An error occurred while fetching enrollments");
     }
   };
 
@@ -181,8 +236,8 @@ export default function CourseFormPage() {
   };
 
   const handleSubmit = async () => {
-    if (!user?.id) {
-      showError("Error", "User not authenticated");
+    if (!user?.studentProfile?.id) {
+      showError("User not authenticated");
       return;
     }
 
@@ -194,21 +249,21 @@ export default function CourseFormPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          studentId: user.id,
+          studentId: user.studentProfile.id,
           subjectIds: selectedSubjects,
         }),
       });
 
       if (response.ok) {
-        showSuccess("Registration Submitted", "Your course registration has been submitted successfully");
+        showSuccess("Your course registration has been submitted successfully");
         setEditMode(false);
         fetchEnrollments();
       } else {
         const error = await response.json();
-        showError("Error", error.error || "Failed to submit registration");
+        showError(error.error || "Failed to submit registration");
       }
     } catch (error) {
-      showError("Error", "Failed to submit registration");
+      showError("Failed to submit registration");
     } finally {
       setSubmitting(false);
     }
@@ -230,11 +285,47 @@ export default function CourseFormPage() {
     return Object.entries(grouped).sort(([a], [b]) => parseInt(a) - parseInt(b));
   };
 
+  // Show loading state while auth or data are loading
+  if (userLoading || authLoading) {
+    return (
+      <DashboardLayout userRole="student" userName="">
+        <div className="flex items-center justify-center h-64">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <p className="text-muted-foreground">Loading course registration...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Show login required if no user
+  if (!user) {
+    return (
+      <DashboardLayout userRole="student" userName="">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <User className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+            <h3 className="font-medium mb-2">Login Required</h3>
+            <p className="text-sm text-muted-foreground">
+              Please log in to access course registration.
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
+      <DashboardLayout userRole="student" userName={user?.name || ""}>
+        <div className="flex items-center justify-center h-64">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <p className="text-muted-foreground">Loading student profile...</p>
+          </div>
+        </div>
+      </DashboardLayout>
     );
   }
 

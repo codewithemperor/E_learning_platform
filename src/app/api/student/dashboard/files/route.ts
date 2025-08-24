@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     // Fetch recent files from enrolled courses
     const files = await db.subjectFile.findMany({
       where: {
-        teacherSubject: {
+        subject: {
           enrollments: {
             some: {
               studentId: studentId,
@@ -27,11 +27,7 @@ export async function GET(request: NextRequest) {
       },
       include: {
         fileUpload: true,
-        teacherSubject: {
-          include: {
-            subject: true,
-          },
-        },
+        subject: true,
       },
       orderBy: {
         uploadedAt: "desc",
@@ -43,7 +39,7 @@ export async function GET(request: NextRequest) {
     const formattedFiles = files.map((file) => ({
       id: file.id,
       title: file.title,
-      course: file.teacherSubject.subject.name,
+      course: file.subject.name,
       uploadedAt: file.uploadedAt,
     }));
 

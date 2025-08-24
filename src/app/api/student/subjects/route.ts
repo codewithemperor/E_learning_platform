@@ -3,7 +3,6 @@ import { db } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
   try {
-    // Get student ID from session or query parameter
     const { searchParams } = new URL(request.url);
     const studentId = searchParams.get("studentId");
 
@@ -14,25 +13,59 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch student subjects with teacher and course info
-    const subjects = await db.enrollment.findMany({
+    // First, resolve the actual user ID
+    let actualUserId = studentId;
+    
+    // Check if this is a student profile ID
+    const studentProfile = await db.student.findUnique({
+      where: { id: studentId },
+      select: { userId: true }
+    });
+    
+    if (studentProfile) {
+      actualUserId = studentProfile.userId;
+    } else {
+      // Verify it's a valid user ID with student role
+      const userWithStudent = await db.user.findUnique({
+        where: { 
+          id: studentId,
+          role: "STUDENT"
+        },
+        include: { studentProfile: true }
+      });
+      
+      if (!userWithStudent || !userWithStudent.studentProfile) {
+        return NextResponse.json(
+          { error: "Student not found" },
+          { status: 404 }
+        );
+      }
+    }
+
+    // Fetch student subjects with all required information
+    const enrollments = await db.enrollment.findMany({
       where: {
-        studentId: studentId,
+        studentId: actualUserId,
       },
       include: {
-        teacherSubject: {
+        subject: {
           include: {
-            subject: {
+            course: {
               include: {
-                course: true,
                 department: true,
               },
             },
-            teacher: {
+            teachers: {
               include: {
-                user: true,
-              },
-            },
+                teacher: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  }
+                }
+              }
+            }
           },
         },
       },
@@ -41,17 +74,36 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Format the response
-    const formattedSubjects = subjects.map((enrollment) => ({
-      id: enrollment.teacherSubject.subject.id,
-      name: enrollment.teacherSubject.subject.name,
-      code: enrollment.teacherSubject.subject.code,
-      semester: enrollment.teacherSubject.subject.semester,
-      course: enrollment.teacherSubject.subject.course,
-      department: enrollment.teacherSubject.subject.department,
-      teacher: enrollment.teacherSubject.teacher,
-      enrolledAt: enrollment.enrolledAt,
-    }));
+    // Format the response with teacher information
+    const formattedSubjects = enrollments.map((enrollment) => {
+      // Get the first teacher for this subject (assuming one teacher per subject)
+      const teacherSubject = enrollment.subject.teachers[0];
+      
+      return {
+        id: enrollment.subject.id,
+        name: enrollment.subject.name,
+        code: enrollment.subject.code,
+        semester: enrollment.subject.semester,
+        course: {
+          id: enrollment.subject.course.id,
+          name: enrollment.subject.course.name,
+          code: enrollment.subject.course.code,
+        },
+        department: {
+          id: enrollment.subject.course.department.id,
+          name: enrollment.subject.course.department.name,
+          code: enrollment.subject.course.department.code,
+        },
+        teacher: teacherSubject ? {
+          user: {
+            name: teacherSubject.teacher.name,
+            email: teacherSubject.teacher.email,
+          },
+          teacherId: teacherSubject.teacher.id,
+        } : null,
+        enrolledAt: enrollment.enrolledAt,
+      };
+    });
 
     return NextResponse.json(formattedSubjects);
   } catch (error) {

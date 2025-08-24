@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       // Available files in enrolled courses
       db.subjectFile.count({
         where: {
-          teacherSubject: {
+          subject: {
             enrollments: {
               some: {
                 studentId: studentId,
