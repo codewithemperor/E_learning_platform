@@ -18,13 +18,17 @@ export async function GET(request: NextRequest) {
     let files;
     
     if (subjectId) {
-      // Get files for a specific subject
+      // Get files for a specific subject that this teacher teaches
       files = await db.subjectFile.findMany({
         where: {
-          teacherSubject: {
-            teacherId: teacherId,
-            subjectId: subjectId,
-          },
+          subjectId: subjectId,
+          subject: {
+            teachers: {
+              some: {
+                teacherId: teacherId
+              }
+            }
+          }
         },
         include: {
           fileUpload: true,
@@ -35,12 +39,16 @@ export async function GET(request: NextRequest) {
         },
       });
     } else {
-      // Get all files for this teacher
+      // Get all files for this teacher across all their subjects
       files = await db.subjectFile.findMany({
         where: {
-          teacherSubject: {
-            teacherId: teacherId,
-          },
+          subject: {
+            teachers: {
+              some: {
+                teacherId: teacherId
+              }
+            }
+          }
         },
         include: {
           fileUpload: true,

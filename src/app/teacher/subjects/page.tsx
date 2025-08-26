@@ -11,27 +11,17 @@ import { useAuth } from "@/hooks/use-auth";
 import { useAlert } from "@/hooks/use-alert";
 import { DashboardLayout } from "@/components/dashboard-layout";
 
-interface Subject {
+interface TeacherSubject {
   id: string;
   name: string;
   code: string;
-  semester: number;
-  course: {
-    name: string;
-    code: string;
-  };
-  department: {
-    name: string;
-    code: string;
-  };
-}
-
-interface TeacherSubject {
-  id: string;
   classCode: string;
-  subject: Subject;
-  enrollments: Enrollment[];
-  files: SubjectFile[];
+  course: string;
+  department: string;
+  semester: number;
+  enrollmentCount: number;
+  enrollments?: Enrollment[];
+  files?: SubjectFile[];
 }
 
 interface Enrollment {
@@ -68,21 +58,41 @@ export default function SubjectsPage() {
   const { showSuccess, showError } = useAlert();
 
   useEffect(() => {
-    fetchSubjects();
-  }, []);
+    if (!loading && !user) {
+      window.location.href = "/teacher/login";
+    }
+  }, [user, loading]);
+
+  useEffect(() => {
+    if (user) {
+      fetchSubjects();
+    }
+  }, [user]);
 
   const fetchSubjects = async () => {
     try {
-      const teacherId = user?.id;
-      if (!teacherId) return;
-      
+      setLoading(true);
+
+      const teacherId = user?.teacherProfile?.userId;
+      console.log("Teacher ID:", teacherId);
+      if (!teacherId) {
+        showError("Teacher profile not found");
+        return;
+      }
+
       const response = await fetch(`/api/teacher/subjects?teacherId=${teacherId}`);
       if (response.ok) {
         const data = await response.json();
+        console.log(data);
         setSubjects(data);
+        showSuccess("Subjects loaded successfully");
+      } else {
+        const errorData = await response.json();
+        showError(errorData.error || "Failed to fetch subjects");
       }
     } catch (error) {
       console.error("Error fetching subjects:", error);
+      showError("Failed to fetch subjects");
     } finally {
       setLoading(false);
     }
@@ -91,10 +101,9 @@ export default function SubjectsPage() {
   const handleUploadComplete = () => {
     setShowUpload(false);
     if (selectedSubject) {
-      // Refresh the selected subject to show new files
-      const updatedSubjects = subjects.map(subject => {
+      const updatedSubjects = subjects.map((subject) => {
         if (subject.id === selectedSubject.id) {
-          return { ...subject, files: [...subject.files] }; // This will be updated when we fetch fresh data
+          return { ...subject, files: [...(subject.files || [])] };
         }
         return subject;
       });
@@ -103,10 +112,11 @@ export default function SubjectsPage() {
     showSuccess("Upload Complete", "File uploaded successfully");
   };
 
-  const filteredSubjects = subjects.filter((subject) =>
-    subject.subject.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    subject.subject.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    subject.classCode.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredSubjects = subjects.filter(
+    (subject) =>
+      subject.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      subject.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      subject.classCode.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -120,225 +130,255 @@ export default function SubjectsPage() {
   return (
     <DashboardLayout userRole="teacher" userName={user?.name || ""}>
       <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Subjects</h1>
-          <p className="text-muted-foreground">
-            Manage your subjects, upload materials, and track student progress
-          </p>
-        </div>
-      </div>
-
-      {/* Search and Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <div className="md:col-span-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search subjects by name, code, or class code..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">My Subjects</h1>
+            <p className="text-muted-foreground">
+              Manage your subjects, upload materials, and track student progress
+            </p>
           </div>
         </div>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">{subjects.length}</div>
-            <p className="text-xs text-muted-foreground">Total Subjects</p>
-          </CardContent>
-        </Card>
-      </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Subjects List */}
-        <div className="lg:col-span-2 space-y-4">
+        {/* Search and Stats */}
+        <div className="grid gap-4 md:grid-cols-4">
+          <div className="md:col-span-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search subjects by name, code, or class code..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
           <Card>
-            <CardHeader>
-              <CardTitle>Subject Assignments</CardTitle>
-              <CardDescription>
-                {filteredSubjects.length} subject{filteredSubjects.length !== 1 ? "s" : ""} found
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {filteredSubjects.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
-                  {searchTerm ? "No subjects match your search." : "No subjects assigned yet."}
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {filteredSubjects.map((subject) => (
-                    <div
-                      key={subject.id}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedSubject?.id === subject.id
-                          ? "border-primary bg-primary/5"
-                          : "hover:bg-gray-50"
-                      }`}
-                      onClick={() => setSelectedSubject(subject)}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-2 flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium">{subject.subject.name}</h3>
-                            <Badge variant="secondary">{subject.subject.code}</Badge>
-                            <Badge variant="outline">{subject.classCode}</Badge>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <BookOpen className="h-3 w-3" />
-                              {subject.subject.course.name}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Users className="h-3 w-3" />
-                              {subject.enrollments.length} student{subject.enrollments.length !== 1 ? "s" : ""}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <FileText className="h-3 w-3" />
-                              {subject.files.length} file{subject.files.length !== 1 ? "s" : ""}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold">{subjects.length}</div>
+              <p className="text-xs text-muted-foreground">Total Subjects</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Subject Details */}
-        <div className="space-y-4">
-          {selectedSubject ? (
-            <>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5" />
-                    Subject Details
-                  </CardTitle>
-                  <CardDescription>
-                    {selectedSubject.subject.name} ({selectedSubject.classCode})
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div>
-                      <h4 className="font-medium text-sm">Subject Information</h4>
-                      <div className="mt-2 space-y-1 text-sm">
-                        <p><span className="font-medium">Code:</span> {selectedSubject.subject.code}</p>
-                        <p><span className="font-medium">Course:</span> {selectedSubject.subject.course.name}</p>
-                        <p><span className="font-medium">Department:</span> {selectedSubject.subject.department.name}</p>
-                        <p><span className="font-medium">Semester:</span> {selectedSubject.subject.semester}</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="font-medium text-sm">Statistics</h4>
-                      <div className="mt-2 space-y-1 text-sm">
-                        <p><span className="font-medium">Enrolled Students:</span> {selectedSubject.enrollments.length}</p>
-                        <p><span className="font-medium">Uploaded Files:</span> {selectedSubject.files.length}</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="font-medium text-sm">Quick Actions</h4>
-                      <div className="mt-2 space-y-2">
-                        <Button 
-                          size="sm" 
-                          className="w-full"
-                          onClick={() => setShowUpload(true)}
-                        >
-                          <Upload className="h-4 w-4 mr-2" />
-                          Upload File
-                        </Button>
-                        <Button size="sm" variant="outline" className="w-full">
-                          <Users className="h-4 w-4 mr-2" />
-                          View Students
-                        </Button>
-                        <Button size="sm" variant="outline" className="w-full">
-                          <FileText className="h-4 w-4 mr-2" />
-                          View All Files
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Upload Form */}
-              {showUpload && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Upload File</CardTitle>
-                    <CardDescription>
-                      Upload learning materials for this subject
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <FileUpload
-                      subjectId={selectedSubject.id}
-                      uploadedBy={user?.id || ""}
-                      onUploadComplete={handleUploadComplete}
-                    />
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Recent Files */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Files</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {selectedSubject.files.length === 0 ? (
-                      <p className="text-center text-sm text-muted-foreground py-4">
-                        No files uploaded yet
-                      </p>
-                    ) : (
-                      selectedSubject.files.slice(0, 5).map((file) => (
-                        <div key={file.id} className="flex items-center justify-between p-2 text-sm border rounded">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{file.title}</p>
-                            <p className="text-muted-foreground text-xs">
-                              {file.fileUpload.originalName}
-                            </p>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => window.open(file.fileUpload.cloudinaryUrl, "_blank")}
-                          >
-                            View
-                          </Button>
-                        </div>
-                      ))
-                    )}
-                    {selectedSubject.files.length > 5 && (
-                      <p className="text-center text-sm text-muted-foreground pt-2">
-                        +{selectedSubject.files.length - 5} more files
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </>
-          ) : (
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Subjects List */}
+          <div className="lg:col-span-2 space-y-4">
             <Card>
-              <CardContent className="p-8 text-center">
-                <BookOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <h3 className="font-medium mb-2">Select a Subject</h3>
-                <p className="text-sm text-muted-foreground">
-                  Choose a subject from the list to view details and manage files.
-                </p>
+              <CardHeader>
+                <CardTitle>Subject Assignments</CardTitle>
+                <CardDescription>
+                  {filteredSubjects.length} subject
+                  {filteredSubjects.length !== 1 ? "s" : ""} found
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {filteredSubjects.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    {searchTerm
+                      ? "No subjects match your search."
+                      : "No subjects assigned yet."}
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredSubjects.map((subject) => (
+                      <div
+                        key={subject.id}
+                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                          selectedSubject?.id === subject.id
+                            ? "border-primary bg-primary/5"
+                            : "hover:bg-gray-50"
+                        }`}
+                        onClick={() => setSelectedSubject(subject)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium">{subject.name}</h3>
+                              <Badge variant="secondary">{subject.code}</Badge>
+                              <Badge variant="outline">{subject.classCode}</Badge>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <BookOpen className="h-3 w-3" />
+                                {subject.course}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                {subject.enrollmentCount} student
+                                {subject.enrollmentCount !== 1 ? "s" : ""}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <FileText className="h-3 w-3" />
+                                {(subject.files?.length || 0)} file
+                                {(subject.files?.length || 0) !== 1 ? "s" : ""}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
-          )}
+          </div>
+
+          {/* Subject Details */}
+          <div className="space-y-4">
+            {selectedSubject ? (
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BookOpen className="h-5 w-5" />
+                      Subject Details
+                    </CardTitle>
+                    <CardDescription>
+                      {selectedSubject.name} ({selectedSubject.classCode})
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="font-medium text-sm">Subject Information</h4>
+                        <div className="mt-2 space-y-1 text-sm">
+                          <p>
+                            <span className="font-medium">Code:</span>{" "}
+                            {selectedSubject.code}
+                          </p>
+                          <p>
+                            <span className="font-medium">Course:</span>{" "}
+                            {selectedSubject.course}
+                          </p>
+                          <p>
+                            <span className="font-medium">Department:</span>{" "}
+                            {selectedSubject.department}
+                          </p>
+                          <p>
+                            <span className="font-medium">Semester:</span>{" "}
+                            {selectedSubject.semester}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-sm">Statistics</h4>
+                        <div className="mt-2 space-y-1 text-sm">
+                          <p>
+                            <span className="font-medium">Enrolled Students:</span>{" "}
+                            {selectedSubject.enrollmentCount}
+                          </p>
+                          <p>
+                            <span className="font-medium">Uploaded Files:</span>{" "}
+                            {selectedSubject.files?.length || 0}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-sm">Quick Actions</h4>
+                        <div className="mt-2 space-y-2">
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            onClick={() => setShowUpload(true)}
+                          >
+                            <Upload className="h-4 w-4 mr-2" />
+                            Upload File
+                          </Button>
+                          <Button size="sm" variant="outline" className="w-full">
+                            <Users className="h-4 w-4 mr-2" />
+                            View Students
+                          </Button>
+                          <Button size="sm" variant="outline" className="w-full">
+                            <FileText className="h-4 w-4 mr-2" />
+                            View All Files
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Upload Form */}
+                {showUpload && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Upload File</CardTitle>
+                      <CardDescription>
+                        Upload learning materials for this subject
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <FileUpload
+                        subjectId={selectedSubject.id}
+                        uploadedBy={user?.id || ""}
+                        onUploadComplete={handleUploadComplete}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Recent Files */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recent Files</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {selectedSubject.files?.length === 0 ? (
+                        <p className="text-center text-sm text-muted-foreground py-4">
+                          No files uploaded yet
+                        </p>
+                      ) : (
+                        selectedSubject.files
+                          ?.slice(0, 5)
+                          .map((file) => (
+                            <div
+                              key={file.id}
+                              className="flex items-center justify-between p-2 text-sm border rounded"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium truncate">{file.title}</p>
+                                <p className="text-muted-foreground text-xs">
+                                  {file.fileUpload.originalName}
+                                </p>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() =>
+                                  window.open(file.fileUpload.cloudinaryUrl, "_blank")
+                                }
+                              >
+                                View
+                              </Button>
+                            </div>
+                          ))
+                      )}
+                      {(selectedSubject.files?.length || 0) > 5 && (
+                        <p className="text-center text-sm text-muted-foreground pt-2">
+                          +{(selectedSubject.files?.length || 0) - 5} more files
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <BookOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="font-medium mb-2">Select a Subject</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Choose a subject from the list to view details and manage files.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
       </div>
-    </div>
     </DashboardLayout>
   );
 }

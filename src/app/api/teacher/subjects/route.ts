@@ -3,14 +3,25 @@ import { db } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
   try {
-    // Get teacher ID from session or query parameter
     const { searchParams } = new URL(request.url);
-    const teacherId = searchParams.get("teacherId");
+    const teacherId = searchParams.get("teacherId"); // User ID
 
     if (!teacherId) {
       return NextResponse.json(
         { error: "Teacher ID is required" },
         { status: 400 }
+      );
+    }
+
+    // Verify teacher exists
+    const teacher = await db.teacher.findUnique({
+      where: { userId: teacherId }
+    });
+
+    if (!teacher) {
+      return NextResponse.json(
+        { error: "Teacher not found" },
+        { status: 404 }
       );
     }
 
@@ -22,22 +33,35 @@ export async function GET(request: NextRequest) {
       include: {
         subject: {
           include: {
-            course: true,
-            department: true,
+            course: {
+              include: {
+                department: true
+              }
+            },
+            enrollments: {
+              select: {
+                id: true,
+              },
+            },
           },
         },
       },
       orderBy: {
-        createdAt: "desc",
+        subject: {
+          name: "asc",
+        },
       },
     });
 
-    // Format the response to match the expected interface
     const formattedSubjects = teacherSubjects.map(ts => ({
       id: ts.subject.id,
       name: ts.subject.name,
       code: ts.subject.code,
-      classCode: ts.classCode
+      classCode: ts.classCode,
+      course: ts.subject.course.name,
+      department: ts.subject.course.department.name,
+      semester: ts.subject.semester,
+      enrollmentCount: ts.subject.enrollments.length,
     }));
 
     return NextResponse.json(formattedSubjects);

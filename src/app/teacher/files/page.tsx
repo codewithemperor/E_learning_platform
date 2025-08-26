@@ -65,29 +65,59 @@ export default function FilesPage() {
 
   const fetchSubjects = async () => {
     try {
-      const response = await fetch("/api/teacher/subjects");
+      setLoading(true);
+      
+      // Get teacher ID from auth user - should use teacherProfile.id
+      const teacherId = user?.teacherProfile?.userId;
+      if (!teacherId) {
+        showError('Teacher profile not found');
+        return;
+      }
+      
+      const response = await fetch(`/api/teacher/subjects?teacherId=${teacherId}`);
       if (response.ok) {
         const data = await response.json();
         setSubjects(data);
+        showSuccess('Subjects loaded successfully');
+      } else {
+        const errorData = await response.json();
+        showError(errorData.error || 'Failed to fetch subjects');
       }
     } catch (error) {
       console.error("Error fetching subjects:", error);
+      showError('Failed to fetch subjects');
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchFiles = async (subjectId?: string) => {
     try {
+      setLoading(true);
+      
+      // Get teacher ID from auth user - should use teacherProfile.id
+      const teacherId = user?.teacherProfile?.userId;
+      if (!teacherId) {
+        showError('Teacher profile not found');
+        return;
+      }
+      
       const url = subjectId 
-        ? `/api/teacher/files?subjectId=${subjectId}`
-        : "/api/teacher/files";
+        ? `/api/teacher/files?teacherId=${teacherId}&subjectId=${subjectId}`
+        : `/api/teacher/files?teacherId=${teacherId}`;
       
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         setFiles(data);
+        showSuccess('Files loaded successfully');
+      } else {
+        const errorData = await response.json();
+        showError(errorData.error || 'Failed to fetch files');
       }
     } catch (error) {
       console.error("Error fetching files:", error);
+      showError('Failed to fetch files');
     } finally {
       setLoading(false);
     }

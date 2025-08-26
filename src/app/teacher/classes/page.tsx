@@ -15,24 +15,20 @@ interface Subject {
   name: string;
   code: string;
   semester: number;
-  course: {
-    name: string;
-    code: string;
-  };
-  department: {
-    name: string;
-    code: string;
-  };
+  description?: string | null;
 }
 
 interface Enrollment {
   id: string;
   student: {
-    user: {
-      name: string;
-      email: string;
-    };
+    id: string;
     studentId: string;
+    name: string;
+    email: string;
+    year: number;
+    semester: number;
+    department: { name: string; code: string };
+    course: { name: string; code: string };
   };
   enrolledAt: string;
 }
@@ -41,8 +37,17 @@ interface TeacherClass {
   id: string;
   classCode: string;
   subject: Subject;
+  course: {
+    name: string;
+    code: string;
+  };
+  department: {
+    name: string;
+    code: string;
+  };
   enrollments: Enrollment[];
-  createdAt: string;
+  studentCount: number;
+  createdAt?: string;
 }
 
 export default function ClassesPage() {
@@ -55,7 +60,7 @@ export default function ClassesPage() {
 
   useEffect(() => {
     if (!loading && !user) {
-      window.location.href = '/teacher/login';
+      window.location.href = "/teacher/login";
     }
   }, [user, loading]);
 
@@ -67,22 +72,38 @@ export default function ClassesPage() {
 
   const fetchClasses = async () => {
     try {
-      const response = await fetch("/api/teacher/classes");
+      setLoadingData(true);
+
+      const teacherId = user?.teacherProfile?.userId;
+      console.log("Teacher ID:", teacherId);
+      if (!teacherId) {
+        showError("Teacher profile not found");
+        return;
+      }
+
+      const response = await fetch(`/api/teacher/classes?teacherId=${teacherId}`);
       if (response.ok) {
         const data = await response.json();
+        console.log("Fetched classes:", data);
         setClasses(data);
+        showSuccess("Classes loaded successfully");
+      } else {
+        const errorData = await response.json();
+        showError(errorData.error || "Failed to fetch classes");
       }
     } catch (error) {
       console.error("Error fetching classes:", error);
+      showError("Failed to fetch classes");
     } finally {
       setLoadingData(false);
     }
   };
 
-  const filteredClasses = classes.filter((classItem) =>
-    classItem.subject.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    classItem.subject.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    classItem.classCode.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredClasses = classes.filter(
+    (classItem) =>
+      classItem.subject.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      classItem.subject.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      classItem.classCode.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading || loadingData) {
@@ -137,13 +158,16 @@ export default function ClassesPage() {
               <CardHeader>
                 <CardTitle>Class Assignments</CardTitle>
                 <CardDescription>
-                  {filteredClasses.length} class{filteredClasses.length !== 1 ? "es" : ""} found
+                  {filteredClasses.length} class
+                  {filteredClasses.length !== 1 ? "es" : ""} found
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {filteredClasses.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">
-                    {searchTerm ? "No classes match your search." : "No classes assigned yet."}
+                    {searchTerm
+                      ? "No classes match your search."
+                      : "No classes assigned yet."}
                   </p>
                 ) : (
                   <div className="space-y-3">
@@ -160,14 +184,18 @@ export default function ClassesPage() {
                         <div className="flex items-start justify-between">
                           <div className="space-y-2 flex-1">
                             <div className="flex items-center gap-2">
-                              <h3 className="font-medium">{classItem.subject.name}</h3>
-                              <Badge variant="secondary">{classItem.subject.code}</Badge>
+                              <h3 className="font-medium">
+                                {classItem.subject.name}
+                              </h3>
+                              <Badge variant="secondary">
+                                {classItem.subject.code}
+                              </Badge>
                               <Badge variant="outline">{classItem.classCode}</Badge>
                             </div>
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <BookOpen className="h-3 w-3" />
-                                {classItem.subject.course.name}
+                                {classItem.course?.name || "No course"}
                               </div>
                               <div className="flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
@@ -175,7 +203,8 @@ export default function ClassesPage() {
                               </div>
                               <div className="flex items-center gap-1">
                                 <Users className="h-3 w-3" />
-                                {classItem.enrollments.length} student{classItem.enrollments.length !== 1 ? "s" : ""}
+                                {classItem.enrollments.length} student
+                                {classItem.enrollments.length !== 1 ? "s" : ""}
                               </div>
                             </div>
                           </div>
@@ -207,17 +236,32 @@ export default function ClassesPage() {
                       <div>
                         <h4 className="font-medium text-sm">Subject Information</h4>
                         <div className="mt-2 space-y-1 text-sm">
-                          <p><span className="font-medium">Code:</span> {selectedClass.subject.code}</p>
-                          <p><span className="font-medium">Course:</span> {selectedClass.subject.course.name}</p>
-                          <p><span className="font-medium">Department:</span> {selectedClass.subject.department.name}</p>
-                          <p><span className="font-medium">Semester:</span> {selectedClass.subject.semester}</p>
+                          <p>
+                            <span className="font-medium">Code:</span>{" "}
+                            {selectedClass.subject.code}
+                          </p>
+                          <p>
+                            <span className="font-medium">Course:</span>{" "}
+                            {selectedClass.course?.name}
+                          </p>
+                          <p>
+                            <span className="font-medium">Department:</span>{" "}
+                            {selectedClass.department?.name}
+                          </p>
+                          <p>
+                            <span className="font-medium">Semester:</span>{" "}
+                            {selectedClass.subject.semester}
+                          </p>
                         </div>
                       </div>
 
                       <div>
                         <h4 className="font-medium text-sm">Enrollment Statistics</h4>
                         <div className="mt-2 space-y-1 text-sm">
-                          <p><span className="font-medium">Total Students:</span> {selectedClass.enrollments.length}</p>
+                          <p>
+                            <span className="font-medium">Total Students:</span>{" "}
+                            {selectedClass.enrollments.length}
+                          </p>
                         </div>
                       </div>
 
@@ -249,10 +293,15 @@ export default function ClassesPage() {
                   <CardContent>
                     <div className="space-y-2">
                       {selectedClass.enrollments.slice(0, 5).map((enrollment) => (
-                        <div key={enrollment.id} className="flex items-center justify-between p-2 text-sm">
+                        <div
+                          key={enrollment.id}
+                          className="flex items-center justify-between p-2 text-sm"
+                        >
                           <div>
-                            <p className="font-medium">{enrollment.student.user.name}</p>
-                            <p className="text-muted-foreground">{enrollment.student.studentId}</p>
+                            <p className="font-medium">{enrollment.student.name}</p>
+                            <p className="text-muted-foreground">
+                              {enrollment.student.studentId}
+                            </p>
                           </div>
                           <Badge variant="outline" className="text-xs">
                             {new Date(enrollment.enrolledAt).toLocaleDateString()}

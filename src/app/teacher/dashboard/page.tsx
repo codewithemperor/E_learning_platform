@@ -1,10 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Users, BookOpen, FileText, Video } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useAlert } from "@/hooks/use-alert";
 
 interface TeacherStats {
   totalClasses: number;
@@ -17,24 +24,26 @@ interface TeacherClass {
   id: string;
   name: string;
   studentCount: number;
-  schedule: string;
+  time: string;
   subject: string;
+  students: number;
 }
 
 export default function TeacherDashboard() {
   const { user, loading } = useAuth();
+  const { showSuccess, showError } = useAlert();
   const [stats, setStats] = useState<TeacherStats>({
     totalClasses: 0,
     totalStudents: 0,
     totalFiles: 0,
-    totalVideoCalls: 0
+    totalVideoCalls: 0,
   });
   const [recentClasses, setRecentClasses] = useState<TeacherClass[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
-      window.location.href = '/teacher/login';
+      window.location.href = "/teacher/login";
     }
   }, [user, loading]);
 
@@ -46,26 +55,38 @@ export default function TeacherDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      // Get teacher ID from auth user
-      const teacherId = user?.id;
-      if (!teacherId) return;
+      setLoadingData(true);
 
-      const [statsResponse, classesResponse] = await Promise.all([
-        fetch(`/api/teacher/dashboard/stats?teacherId=${teacherId}`),
-        fetch(`/api/teacher/dashboard/classes?teacherId=${teacherId}`)
-      ]);
-
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json();
-        setStats(statsData);
+      const teacherId = user?.teacherProfile?.userId;
+      if (!teacherId) {
+        showError("Teacher profile not found");
+        return;
       }
 
-      if (classesResponse.ok) {
-        const classesData = await classesResponse.json();
-        setRecentClasses(classesData);
+      const response = await fetch(
+        `/api/teacher/dashboard?teacherId=${teacherId}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // 🟢 Map API stats to frontend shape
+        setStats({
+          totalClasses: data.stats?.totalSubjects || 0,
+          totalStudents: data.stats?.totalStudents || 0,
+          totalFiles: data.stats?.totalFiles || 0,
+          totalVideoCalls: data.stats?.totalVideoCalls || 0, // may not exist yet
+        });
+
+        setRecentClasses(data.recentClasses || []);
+        showSuccess("Dashboard data loaded successfully");
+      } else {
+        const errorData = await response.json();
+        showError(errorData.error || "Failed to fetch dashboard data");
       }
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error("Error fetching dashboard data:", error);
+      showError("Failed to fetch dashboard data");
     } finally {
       setLoadingData(false);
     }
@@ -83,7 +104,7 @@ export default function TeacherDashboard() {
   }
 
   if (!user) {
-    return null; // Will redirect in useEffect
+    return null;
   }
 
   const statsCards = [
@@ -123,7 +144,8 @@ export default function TeacherDashboard() {
         <div>
           <h1 className="text-3xl font-bold">Teacher Dashboard</h1>
           <p className="text-gray-600 dark:text-gray-300">
-            Welcome to the teacher dashboard. Manage your classes and students from here.
+            Welcome to the teacher dashboard. Manage your classes and students
+            from here.
           </p>
         </div>
 
@@ -156,18 +178,29 @@ export default function TeacherDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentClasses.map((classItem) => (
-                  <div key={classItem.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium">{classItem.name}</div>
-                      <div className="text-sm text-gray-500">{classItem.time}</div>
+                {recentClasses.length > 0 ? (
+                  recentClasses.map((classItem) => (
+                    <div
+                      key={classItem.id}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
+                      <div>
+                        <div className="font-medium">{classItem.name}</div>
+                        <div className="text-sm text-gray-500">
+                          {classItem.time}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium">
+                          {classItem.students} students
+                        </div>
+                        <div className="text-xs text-gray-500">Enrolled</div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium">{classItem.students} students</div>
-                      <div className="text-xs text-gray-500">Enrolled</div>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">No classes found</p>
+                )}
               </div>
             </CardContent>
           </Card>

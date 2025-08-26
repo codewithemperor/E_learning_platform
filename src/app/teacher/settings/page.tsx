@@ -41,7 +41,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (profile) {
@@ -57,7 +57,12 @@ export default function SettingsPage() {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch("/api/teacher/profile");
+      if (!user?.teacherProfile?.userId) {
+        console.error("No teacher ID available");
+        return;
+      }
+      
+      const response = await fetch(`/api/teacher/profile?teacherId=${user.teacherProfile.id}`);
       if (response.ok) {
         const data = await response.json();
         setProfile(data);
@@ -74,7 +79,13 @@ export default function SettingsPage() {
     setSaving(true);
 
     try {
-      const response = await fetch("/api/teacher/profile", {
+      if (!user?.teacherProfile?.userId) {
+        showError("Error", "Teacher ID not available");
+        setSaving(false);
+        return;
+      }
+
+      const response = await fetch(`/api/teacher/profile?teacherId=${user.teacherProfile.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
