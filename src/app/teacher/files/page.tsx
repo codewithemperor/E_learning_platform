@@ -43,17 +43,25 @@ export default function FilesPage() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userLoading, setUserLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [showUpload, setShowUpload] = useState(false);
   const [uploadSubjectId, setUploadSubjectId] = useState<string>("");
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { showSuccess, showError, showConfirm } = useAlert();
 
   useEffect(() => {
-    fetchSubjects();
-    fetchFiles();
-  }, []);
+    if (!authLoading) {
+      setUserLoading(false);
+      if (user) {
+        fetchSubjects();
+        fetchFiles();
+      } else {
+        setLoading(false);
+      }
+    }
+  }, [user, authLoading]);
 
   useEffect(() => {
     if (selectedSubject && selectedSubject !== "all") {
@@ -61,7 +69,7 @@ export default function FilesPage() {
     } else {
       fetchFiles();
     }
-  }, [selectedSubject]);
+  }, [selectedSubject, user]);
 
   const fetchSubjects = async () => {
     try {
@@ -69,10 +77,7 @@ export default function FilesPage() {
       
       // Get teacher ID from auth user - should use teacherProfile.id
       const teacherId = user?.teacherProfile?.userId;
-      if (!teacherId) {
-        showError('Teacher profile not found');
-        return;
-      }
+
       
       const response = await fetch(`/api/teacher/subjects?teacherId=${teacherId}`);
       if (response.ok) {
@@ -185,11 +190,23 @@ export default function FilesPage() {
     file.subject.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
+  if (loading || userLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <DashboardLayout userRole="teacher" userName="">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-muted-foreground">Please log in to access this page.</p>
+          </div>
+        </div>
+      </DashboardLayout>
     );
   }
 

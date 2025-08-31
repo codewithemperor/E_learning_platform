@@ -103,7 +103,10 @@ export function FileUpload({ subjectId, uploadedBy, onUploadComplete }: FileUplo
           Upload File
         </CardTitle>
         <CardDescription>
-          Upload learning materials for your students
+          {subjectId 
+            ? "Upload learning materials for this subject" 
+            : "Upload learning materials for your students"
+          }
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -184,30 +187,33 @@ export function FileUpload({ subjectId, uploadedBy, onUploadComplete }: FileUplo
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="subject">Subject</Label>
-                <Select 
-                  value={register("subjectId").value} 
-                  onValueChange={(value) => {
-                    register("subjectId").onChange({
-                      target: { value, name: "subjectId" }
-                    } as any);
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a subject" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cs101">Computer Science 101</SelectItem>
-                    <SelectItem value="cs201">Data Structures</SelectItem>
-                    <SelectItem value="web101">Web Development</SelectItem>
-                    <SelectItem value="db101">Database Systems</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.subjectId && (
-                  <p className="text-sm text-red-600">{errors.subjectId}</p>
-                )}
-              </div>
+              {!subjectId && (
+                <div className="space-y-2">
+                  <Label htmlFor="subject">Subject</Label>
+                  <Select 
+                    value={register("subjectId").value} 
+                    onValueChange={(value) => {
+                      register("subjectId").onChange({
+                        target: { value, name: "subjectId" }
+                      } as any);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    
+                    </SelectContent>
+                  </Select>
+                  {errors.subjectId && (
+                    <p className="text-sm text-red-600">{errors.subjectId}</p>
+                  )}
+                </div>
+              )}
+
+              {subjectId && (
+                <input type="hidden" {...register("subjectId")} />
+              )}
 
               <Button 
                 type="submit" 

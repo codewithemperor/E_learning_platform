@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import cloudinary from '@/lib/cloudinary';
 import { db } from '@/lib/db';
 import { writeFile } from 'fs/promises';
+import { mkdir } from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { unlinkSync, existsSync } from 'fs';
@@ -28,7 +29,15 @@ export async function POST(request: NextRequest) {
 
     // Generate unique filename
     const fileName = `${uuidv4()}-${file.name}`;
-    const tempFilePath = path.join(process.cwd(), 'temp', fileName);
+    const tempDir = path.join(process.cwd(), 'temp');
+    const tempFilePath = path.join(tempDir, fileName);
+
+    // Ensure temp directory exists
+    try {
+      await mkdir(tempDir, { recursive: true });
+    } catch (error) {
+      // Directory might already exist, continue
+    }
 
     // Write file to temporary location
     await writeFile(tempFilePath, buffer);

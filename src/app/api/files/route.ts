@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const whereClause: any = {};
     
     if (subjectId) {
-      whereClause.subjectFiles = {
+      whereClause.files = {
         some: {
           subjectId: subjectId
         }
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const files = await db.fileUpload.findMany({
       where: whereClause,
       include: {
-        subjectFiles: {
+        files: {
           include: {
             subject: {
               select: {
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         name: file.user.name,
         email: file.user.email
       },
-      subjectFiles: file.subjectFiles.map(sf => ({
+      subjectFiles: file.files.map(sf => ({
         subject: {
           name: sf.subject.name,
           code: sf.subject.code

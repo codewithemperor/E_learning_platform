@@ -37,8 +37,7 @@ const menuItems = {
   ],
   teacher: [
     { title: "Dashboard", icon: Home, url: "/teacher/dashboard" },
-    { title: "My Classes", icon: BookOpen, url: "/teacher/classes" },
-    { title: "Subjects", icon: FileText, url: "/teacher/subjects" },
+    { title: "Classes & Subjects", icon: BookOpen, url: "/teacher/classes-and-subjects" },
     { title: "Students", icon: GraduationCap, url: "/teacher/students" },
     { title: "File Management", icon: FileText, url: "/teacher/files" },
     { title: "Video Call", icon: User, url: "/teacher/video-call" },

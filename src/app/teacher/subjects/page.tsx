@@ -5,11 +5,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { BookOpen, Users, FileText, Upload, Search } from "lucide-react";
+import { BookOpen, Users, FileText, Upload, Search, Eye } from "lucide-react";
 import { FileUpload } from "@/components/file-upload";
 import { useAuth } from "@/hooks/use-auth";
 import { useAlert } from "@/hooks/use-alert";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface TeacherSubject {
   id: string;
@@ -160,224 +176,192 @@ export default function SubjectsPage() {
           </Card>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Subjects List */}
-          <div className="lg:col-span-2 space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Subject Assignments</CardTitle>
-                <CardDescription>
-                  {filteredSubjects.length} subject
-                  {filteredSubjects.length !== 1 ? "s" : ""} found
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {filteredSubjects.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    {searchTerm
-                      ? "No subjects match your search."
-                      : "No subjects assigned yet."}
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {filteredSubjects.map((subject) => (
-                      <div
-                        key={subject.id}
-                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                          selectedSubject?.id === subject.id
-                            ? "border-primary bg-primary/5"
-                            : "hover:bg-gray-50"
-                        }`}
-                        onClick={() => setSelectedSubject(subject)}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-2 flex-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-medium">{subject.name}</h3>
-                              <Badge variant="secondary">{subject.code}</Badge>
-                              <Badge variant="outline">{subject.classCode}</Badge>
-                            </div>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <BookOpen className="h-3 w-3" />
-                                {subject.course}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Users className="h-3 w-3" />
-                                {subject.enrollmentCount} student
-                                {subject.enrollmentCount !== 1 ? "s" : ""}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <FileText className="h-3 w-3" />
-                                {(subject.files?.length || 0)} file
-                                {(subject.files?.length || 0) !== 1 ? "s" : ""}
-                              </div>
-                            </div>
+        {/* Subjects List */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Subject Assignments</CardTitle>
+            <CardDescription>
+              {filteredSubjects.length} subject
+              {filteredSubjects.length !== 1 ? "s" : ""} found
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {filteredSubjects.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                {searchTerm
+                  ? "No subjects match your search."
+                  : "No subjects assigned yet."}
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {filteredSubjects.map((subject) => (
+                  <div
+                    key={subject.id}
+                    className="p-4 border rounded-lg hover:bg-gray-50"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium">{subject.name}</h3>
+                          <Badge variant="secondary">{subject.code}</Badge>
+                          <Badge variant="outline">{subject.classCode}</Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <BookOpen className="h-3 w-3" />
+                            {subject.course}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            {subject.enrollmentCount} student
+                            {subject.enrollmentCount !== 1 ? "s" : ""}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <FileText className="h-3 w-3" />
+                            {(subject.files?.length || 0)} file
+                            {(subject.files?.length || 0) !== 1 ? "s" : ""}
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Subject Details */}
-          <div className="space-y-4">
-            {selectedSubject ? (
-              <>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BookOpen className="h-5 w-5" />
-                      Subject Details
-                    </CardTitle>
-                    <CardDescription>
-                      {selectedSubject.name} ({selectedSubject.classCode})
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-3">
-                      <div>
-                        <h4 className="font-medium text-sm">Subject Information</h4>
-                        <div className="mt-2 space-y-1 text-sm">
-                          <p>
-                            <span className="font-medium">Code:</span>{" "}
-                            {selectedSubject.code}
-                          </p>
-                          <p>
-                            <span className="font-medium">Course:</span>{" "}
-                            {selectedSubject.course}
-                          </p>
-                          <p>
-                            <span className="font-medium">Department:</span>{" "}
-                            {selectedSubject.department}
-                          </p>
-                          <p>
-                            <span className="font-medium">Semester:</span>{" "}
-                            {selectedSubject.semester}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h4 className="font-medium text-sm">Statistics</h4>
-                        <div className="mt-2 space-y-1 text-sm">
-                          <p>
-                            <span className="font-medium">Enrolled Students:</span>{" "}
-                            {selectedSubject.enrollmentCount}
-                          </p>
-                          <p>
-                            <span className="font-medium">Uploaded Files:</span>{" "}
-                            {selectedSubject.files?.length || 0}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h4 className="font-medium text-sm">Quick Actions</h4>
-                        <div className="mt-2 space-y-2">
-                          <Button
-                            size="sm"
-                            className="w-full"
-                            onClick={() => setShowUpload(true)}
-                          >
-                            <Upload className="h-4 w-4 mr-2" />
-                            Upload File
-                          </Button>
-                          <Button size="sm" variant="outline" className="w-full">
-                            <Users className="h-4 w-4 mr-2" />
-                            View Students
-                          </Button>
-                          <Button size="sm" variant="outline" className="w-full">
-                            <FileText className="h-4 w-4 mr-2" />
-                            View All Files
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Upload Form */}
-                {showUpload && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Upload File</CardTitle>
-                      <CardDescription>
-                        Upload learning materials for this subject
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <FileUpload
-                        subjectId={selectedSubject.id}
-                        uploadedBy={user?.id || ""}
-                        onUploadComplete={handleUploadComplete}
-                      />
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Recent Files */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Files</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {selectedSubject.files?.length === 0 ? (
-                        <p className="text-center text-sm text-muted-foreground py-4">
-                          No files uploaded yet
-                        </p>
-                      ) : (
-                        selectedSubject.files
-                          ?.slice(0, 5)
-                          .map((file) => (
-                            <div
-                              key={file.id}
-                              className="flex items-center justify-between p-2 text-sm border rounded"
+                      <div className="flex items-center gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => setSelectedSubject(subject)}
                             >
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium truncate">{file.title}</p>
-                                <p className="text-muted-foreground text-xs">
-                                  {file.fileUpload.originalName}
-                                </p>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Details
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                              <DialogTitle>Subject Details</DialogTitle>
+                              <DialogDescription>
+                                {subject.name} ({subject.classCode})
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <h4 className="font-medium text-sm">Subject Information</h4>
+                                  <div className="mt-2 space-y-1 text-sm">
+                                    <p>
+                                      <span className="font-medium">Code:</span>{" "}
+                                      {subject.code}
+                                    </p>
+                                    <p>
+                                      <span className="font-medium">Course:</span>{" "}
+                                      {subject.course}
+                                    </p>
+                                    <p>
+                                      <span className="font-medium">Department:</span>{" "}
+                                      {subject.department}
+                                    </p>
+                                    <p>
+                                      <span className="font-medium">Semester:</span>{" "}
+                                      {subject.semester}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div>
+                                  <h4 className="font-medium text-sm">Statistics</h4>
+                                  <div className="mt-2 space-y-1 text-sm">
+                                    <p>
+                                      <span className="font-medium">Enrolled Students:</span>{" "}
+                                      {subject.enrollmentCount}
+                                    </p>
+                                    <p>
+                                      <span className="font-medium">Uploaded Files:</span>{" "}
+                                      {subject.files?.length || 0}
+                                    </p>
+                                  </div>
+                                </div>
                               </div>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() =>
-                                  window.open(file.fileUpload.cloudinaryUrl, "_blank")
-                                }
-                              >
-                                View
-                              </Button>
                             </div>
-                          ))
-                      )}
-                      {(selectedSubject.files?.length || 0) > 5 && (
-                        <p className="text-center text-sm text-muted-foreground pt-2">
-                          +{(selectedSubject.files?.length || 0) - 5} more files
-                        </p>
-                      )}
+                          </DialogContent>
+                        </Dialog>
+
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => setSelectedSubject(subject)}
+                            >
+                              <Users className="h-4 w-4 mr-2" />
+                              View Students
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl">
+                            <DialogHeader>
+                              <DialogTitle>Enrolled Students</DialogTitle>
+                              <DialogDescription>
+                                {subject.name} ({subject.classCode}) - {subject.enrollmentCount} students
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="max-h-96 overflow-y-auto">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Student ID</TableHead>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Email</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {subject.enrollments?.map((enrollment) => (
+                                    <TableRow key={enrollment.id}>
+                                      <TableCell className="font-medium">
+                                        {enrollment.student.studentId}
+                                      </TableCell>
+                                      <TableCell>{enrollment.student.user.name}</TableCell>
+                                      <TableCell>{enrollment.student.user.email}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              size="sm"
+                              onClick={() => {
+                                setSelectedSubject(subject);
+                                setShowUpload(true);
+                              }}
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              Upload File
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-lg">
+                            <DialogHeader>
+                              <DialogTitle>Upload File</DialogTitle>
+                              <DialogDescription>
+                                Upload learning materials for {subject.name}
+                              </DialogDescription>
+                            </DialogHeader>
+                            <FileUpload
+                              subjectId={subject.id}
+                              subjectName={subject.name}
+                              uploadedBy={user?.id || ""}
+                              onUploadComplete={handleUploadComplete}
+                            />
+                          </DialogContent>
+                        </Dialog>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </>
-            ) : (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <BookOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                  <h3 className="font-medium mb-2">Select a Subject</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Choose a subject from the list to view details and manage files.
-                  </p>
-                </CardContent>
-              </Card>
+                  </div>
+                ))}
+              </div>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

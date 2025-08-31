@@ -289,54 +289,6 @@ export default function StudentDashboard() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common student tasks</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button
-                variant="outline"
-                className="p-4 h-auto flex flex-col items-start"
-                onClick={() => window.location.href = '/student/files'}
-              >
-                <FileText className="h-6 w-6 text-blue-600 mb-2" />
-                <div className="font-medium">View Files</div>
-                <div className="text-sm text-gray-500">Access materials</div>
-              </Button>
-              <Button
-                variant="outline"
-                className="p-4 h-auto flex flex-col items-start"
-                onClick={() => window.location.href = '/student/classes'}
-              >
-                <BookOpen className="h-6 w-6 text-green-600 mb-2" />
-                <div className="font-medium">My Classes</div>
-                <div className="text-sm text-gray-500">View schedule</div>
-              </Button>
-              <Button
-                variant="outline"
-                className="p-4 h-auto flex flex-col items-start"
-                onClick={() => window.location.href = '/student/files'}
-              >
-                <Download className="h-6 w-6 text-purple-600 mb-2" />
-                <div className="font-medium">Downloads</div>
-                <div className="text-sm text-gray-500">Downloaded files</div>
-              </Button>
-              <Button
-                variant="outline"
-                className="p-4 h-auto flex flex-col items-start"
-                onClick={() => window.location.href = '/student/course-form'}
-              >
-                <Calendar className="h-6 w-6 text-orange-600 mb-2" />
-                <div className="font-medium">Course Form</div>
-                <div className="text-sm text-gray-500">Register courses</div>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </DashboardLayout>
   );
