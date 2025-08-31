@@ -84,7 +84,7 @@ export function DashboardLayout({ children, userRole, userName }: DashboardLayou
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen">
+      <div className="flex h-screen w-full">
         {/* Desktop Sidebar */}
         <Sidebar className="hidden lg:block border-r">
           <SidebarContent className="bg-[var(--sidebar)]">
