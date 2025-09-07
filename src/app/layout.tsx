@@ -15,21 +15,30 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Z.ai Code Scaffold - AI-Powered Development",
-  description: "Modern Next.js scaffold optimized for AI-powered development with Z.ai. Built with TypeScript, Tailwind CSS, and shadcn/ui.",
-  keywords: ["Z.ai", "Next.js", "TypeScript", "Tailwind CSS", "shadcn/ui", "AI development", "React"],
-  authors: [{ name: "Z.ai Team" }],
+  title: "E-Learning Platform - CodeWithEmperor",
+  description:
+    "A modern E-Learning platform for managing courses, classes, and resources. Built with Next.js, TypeScript, Tailwind CSS, and shadcn/ui.",
+  keywords: [
+    "E-Learning",
+    "Next.js",
+    "TypeScript",
+    "Tailwind CSS",
+    "shadcn/ui",
+    "CodeWithEmperor",
+    "Online Education",
+  ],
+  authors: [{ name: "CodeWithEmperor" }],
   openGraph: {
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
-    url: "https://chat.z.ai",
-    siteName: "Z.ai",
+    title: "E-Learning Platform",
+    description: "Learn smarter with the E-Learning Platform by CodeWithEmperor",
+    url: "https://codewithemperor.github.io",
+    siteName: "E-Learning Platform",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
+    title: "E-Learning Platform",
+    description: "A modern E-Learning platform built by CodeWithEmperor",
   },
 };
 
@@ -49,7 +58,16 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <main className="min-h-screen flex flex-col">
+            <div className="flex-1">{children}</div>
+
+            {/* Footer */}
+            <footer className="bg-black/20 text-gray-200 text-center text-xs py-2 z-10">
+              Design and code by{" "}
+              <span className="font-semibold">Sulaimon Yusuf Ayomide</span> —{" "}
+              <span className="italic">codewithemperor</span>
+            </footer>
+          </main>
           <Toaster />
         </ThemeProvider>
       </body>
