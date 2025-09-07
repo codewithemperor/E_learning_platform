@@ -178,6 +178,7 @@ export function FileUpload({ subjectId, uploadedBy, onUploadComplete }: FileUplo
                 <Label htmlFor="description">Description (Optional)</Label>
                 <Textarea
                   id="description"
+                  
                   placeholder="Enter file description"
                   {...register("description")}
                   rows={3}

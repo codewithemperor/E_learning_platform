@@ -437,7 +437,7 @@ export default function ClassesAndSubjectsPage() {
                               Add File
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-lg">
+                            <DialogContent className="max-w-lg h-[75vh] overflow-y-auto">
                             <DialogHeader>
                               <DialogTitle>Upload File</DialogTitle>
                               <DialogDescription>

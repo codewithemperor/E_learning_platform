@@ -265,23 +265,7 @@ export default function ClassesPage() {
                         </div>
                       </div>
 
-                      <div>
-                        <h4 className="font-medium text-sm">Quick Actions</h4>
-                        <div className="mt-2 space-y-2">
-                          <Button size="sm" className="w-full">
-                            <Users className="h-4 w-4 mr-2" />
-                            View All Students
-                          </Button>
-                          <Button size="sm" variant="outline" className="w-full">
-                            <Calendar className="h-4 w-4 mr-2" />
-                            Class Schedule
-                          </Button>
-                          <Button size="sm" variant="outline" className="w-full">
-                            <Clock className="h-4 w-4 mr-2" />
-                            Attendance
-                          </Button>
-                        </div>
-                      </div>
+                   
                     </div>
                   </CardContent>
                 </Card>

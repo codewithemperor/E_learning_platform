@@ -4,32 +4,42 @@ import { db } from '@/lib/db';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const fileId = params.id;
-
-    // Get file info from database
-    const fileUpload = await db.fileUpload.findUnique({
-      where: { id: fileId },
+    const { id: subjectFileId } = await context.params;
+console.log({id: subjectFileId})
+    // 1. Find subjectFile with fileUpload
+    const subjectFile = await db.subjectFile.findUnique({
+      where: { id: subjectFileId },
+      include: { fileUpload: true },
     });
 
-    if (!fileUpload) {
+    if (!subjectFile) {
       return NextResponse.json(
-        { error: 'File not found' },
+        { error: 'Subject file not found' },
         { status: 404 }
       );
     }
 
-    // Delete from Cloudinary
-    if (fileUpload.cloudinaryPublicId) {
+    const fileUpload = subjectFile.fileUpload;
+
+    // 2. Delete subjectFile first
+    await db.subjectFile.delete({
+      where: { id: subjectFileId },
+    });
+
+    // 3. Delete from Cloudinary if exists
+    if (fileUpload?.cloudinaryPublicId) {
       await cloudinary.uploader.destroy(fileUpload.cloudinaryPublicId);
     }
 
-    // Delete from database
-    await db.fileUpload.delete({
-      where: { id: fileId },
-    });
+    // 4. Delete from fileUpload table (optional, only if exists)
+    if (fileUpload) {
+      await db.fileUpload.delete({
+        where: { id: fileUpload.id },
+      });
+    }
 
     return NextResponse.json({
       message: 'File deleted successfully',

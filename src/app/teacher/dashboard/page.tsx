@@ -227,11 +227,7 @@ export default function TeacherDashboard() {
                   <div className="font-medium">View Students</div>
                   <div className="text-sm text-gray-500">Manage enrollments</div>
                 </button>
-                <button className="p-4 text-left border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <BookOpen className="h-6 w-6 text-orange-600 mb-2" />
-                  <div className="font-medium">Class Schedule</div>
-                  <div className="text-sm text-gray-500">View timetable</div>
-                </button>
+               
               </div>
             </CardContent>
           </Card>
