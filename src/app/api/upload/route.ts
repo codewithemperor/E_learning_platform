@@ -6,6 +6,7 @@ import { mkdir } from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { unlinkSync, existsSync } from 'fs';
+import os from 'os';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,10 +30,12 @@ export async function POST(request: NextRequest) {
 
     // Generate unique filename
     const fileName = `${uuidv4()}-${file.name}`;
-    const tempDir = path.join(process.cwd(), 'temp');
+    
+    // Use /tmp directory for Vercel (serverless-compatible)
+    const tempDir = os.tmpdir(); // This returns /tmp on Vercel
     const tempFilePath = path.join(tempDir, fileName);
 
-    // Ensure temp directory exists
+    // Ensure temp directory exists (usually not needed for /tmp, but safe)
     try {
       await mkdir(tempDir, { recursive: true });
     } catch (error) {
