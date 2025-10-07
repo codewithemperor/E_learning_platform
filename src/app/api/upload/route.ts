@@ -52,6 +52,8 @@ export async function POST(request: NextRequest) {
         folder: 'e-learning',
         use_filename: true,
         unique_filename: true,
+        type: 'upload',
+        access_mode: 'public',
       });
 
       // Save file info to database
